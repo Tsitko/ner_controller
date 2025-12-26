@@ -25,6 +25,22 @@ venv/bin/uvicorn ner_controller.main:app --host 0.0.0.0 --port 1304
 
 OpenAPI docs are available at `http://localhost:1304/docs`.
 
+Note: The service expects GLiNER and its dependencies to be cached locally.
+If you want to forbid downloads, set `TRANSFORMERS_OFFLINE=1` and point to the cache with
+`HF_HOME=/home/denis/.cache/huggingface`.
+
+## Autostart (WSL)
+1) Enable systemd for WSL by adding this to `/etc/wsl.conf`:
+```ini
+[boot]
+systemd=true
+```
+2) Restart WSL: `wsl.exe --shutdown` from Windows, then open WSL again.
+3) Run the setup script:
+```bash
+./setup_supervisor.sh
+```
+
 ## Test
 ```bash
 venv/bin/python -m unittest discover -s tests
