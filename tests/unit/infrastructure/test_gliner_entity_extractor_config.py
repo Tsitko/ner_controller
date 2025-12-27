@@ -19,6 +19,6 @@ class TestGlinerEntityExtractorConfig(unittest.TestCase):
         """GlinerEntityExtractorConfig provides expected defaults."""
         config = GlinerEntityExtractorConfig()
 
-        self.assertEqual(config.model_name, "gliner-community/gliner_small")
+        self.assertEqual(config.model_name, "urchade/gliner_multi-v2.1")
         self.assertEqual(config.device, "cpu")
         self.assertEqual(config.batch_size, 8)

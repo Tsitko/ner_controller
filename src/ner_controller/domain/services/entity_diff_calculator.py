@@ -2,8 +2,8 @@
 
 from typing import Sequence
 
-from ner_controller.domain.entities.entity import Entity
 from ner_controller.domain.entities.entity_diff_result import EntityDiffResult
+from ner_controller.domain.services.levenshtein_utils import deduplicate_entities
 
 
 class EntityDiffCalculator:
@@ -11,22 +11,24 @@ class EntityDiffCalculator:
 
     def calculate(
         self,
-        request_entities: Sequence[Entity],
-        response_entities: Sequence[Entity],
+        request_entities: Sequence[str],
+        response_entities: Sequence[str],
     ) -> EntityDiffResult:
         """Compare request/response entities and return a diff result."""
-        request_map, request_order = self._deduplicate(request_entities)
-        response_map, response_order = self._deduplicate(response_entities)
+        # Deduplicate both lists using Levenshtein distance
+        unique_request = self._deduplicate(request_entities)
+        unique_response = self._deduplicate(response_entities)
 
+        # Find hallucinations (entities in response but not in request)
         hallucinations = [
-            self._normalized_text(response_map[key].text)
-            for key in response_order
-            if key not in request_map
+            entity for entity in unique_response
+            if not self._is_similar_to_any(entity, unique_request)
         ]
+
+        # Find missing entities (entities in request but not in response)
         missing = [
-            self._normalized_text(request_map[key].text)
-            for key in request_order
-            if key not in response_map
+            entity for entity in unique_request
+            if not self._is_similar_to_any(entity, unique_response)
         ]
 
         return EntityDiffResult(
@@ -34,27 +36,33 @@ class EntityDiffCalculator:
             missing_entities=missing,
         )
 
-    def _deduplicate(
-        self, entities: Sequence[Entity]
-    ) -> tuple[dict[tuple[str, str], Entity], list[tuple[str, str]]]:
-        """Return a map and order of unique entities by label and normalized text."""
-        ordered_entities = sorted(entities, key=lambda entity: entity.start)
-        result: dict[tuple[str, str], Entity] = {}
-        order: list[tuple[str, str]] = []
+    def _deduplicate(self, entities: Sequence[str]) -> list[str]:
+        """Deduplicate entities using Levenshtein distance with threshold <= 2."""
+        return deduplicate_entities(entities, threshold=2)
 
-        for entity in ordered_entities:
-            key = self._entity_key(entity)
-            if key in result:
-                continue
-            result[key] = entity
-            order.append(key)
+    def _is_similar_to_any(self, entity: str, entity_list: Sequence[str]) -> bool:
+        """
+        Check if entity is similar to any entity in the list.
 
-        return result, order
+        Uses case-insensitive comparison and Levenshtein distance.
 
-    def _entity_key(self, entity: Entity) -> tuple[str, str]:
-        """Build a comparison key from entity label and normalized text."""
-        return entity.label.casefold(), self._normalized_text(entity.text).casefold()
+        Args:
+            entity: Entity to check.
+            entity_list: List of entities to compare against.
 
-    def _normalized_text(self, text: str) -> str:
-        """Normalize text for comparison and output."""
-        return text.strip()
+        Returns:
+            True if entity is similar (Levenshtein distance <= 2) to any entity in the list.
+        """
+        from ner_controller.domain.services.levenshtein_utils import levenshtein_distance
+
+        entity_normalized = entity.strip().casefold()
+        for other in entity_list:
+            other_normalized = other.strip().casefold()
+            # First try exact match (case-insensitive)
+            if entity_normalized == other_normalized:
+                return True
+            # Then try Levenshtein distance
+            if levenshtein_distance(entity_normalized, other_normalized) <= 2:
+                return True
+        return False
+

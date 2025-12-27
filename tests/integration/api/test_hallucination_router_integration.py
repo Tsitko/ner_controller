@@ -14,7 +14,6 @@ from fastapi.routing import APIRoute
 from ner_controller.api.configs.hallucination_router_config import HallucinationRouterConfig
 from ner_controller.api.routers.hallucination_router import HallucinationRouter
 from ner_controller.api.schemas.hallucination_check_request import HallucinationCheckRequest
-from ner_controller.domain.entities.entity import Entity
 from ner_controller.domain.interfaces.entity_extractor_interface import EntityExtractorInterface
 from ner_controller.domain.services.entity_diff_calculator import EntityDiffCalculator
 from ner_controller.domain.services.hallucination_detection_service import (
@@ -25,11 +24,11 @@ from ner_controller.domain.services.hallucination_detection_service import (
 class StaticEntityExtractor(EntityExtractorInterface):
     """Simple extractor that returns preconfigured entities by text."""
 
-    def __init__(self, mapping: dict[str, Sequence[Entity]]) -> None:
+    def __init__(self, mapping: dict[str, Sequence[str]]) -> None:
         """Initialize extractor with text-to-entities mapping."""
         self._mapping = mapping
 
-    def extract(self, text: str, entity_types: Sequence[str]) -> Sequence[Entity]:
+    def extract(self, text: str, entity_types: Sequence[str]) -> Sequence[str]:
         """Return entities for the given text, ignoring entity types."""
         return list(self._mapping.get(text, []))
 
@@ -40,10 +39,10 @@ class TestHallucinationRouterIntegration(unittest.TestCase):
     def test_router_handles_request(self) -> None:
         """POST endpoint returns expected response model."""
         request_entities = [
-            Entity(text="Alice", label="PERSON", start=0, end=5),
+            "Alice",
         ]
         response_entities = [
-            Entity(text="Bob", label="PERSON", start=0, end=3),
+            "Bob",
         ]
         extractor = StaticEntityExtractor({"Prompt": request_entities, "Answer": response_entities})
         service = HallucinationDetectionService(extractor, EntityDiffCalculator())

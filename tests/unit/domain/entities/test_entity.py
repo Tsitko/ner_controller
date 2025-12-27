@@ -1,4 +1,4 @@
-"""Unit tests for Entity."""
+"""Unit tests for Entity type alias."""
 
 import path_setup
 
@@ -11,13 +11,42 @@ from ner_controller.domain.entities.entity import Entity
 
 
 class TestEntity(unittest.TestCase):
-    """Tests Entity data container."""
+    """Tests Entity type alias (str)."""
 
-    def test_fields(self) -> None:
-        """Entity stores expected values."""
-        entity = Entity(text="Alice", label="PERSON", start=0, end=5)
+    def test_entity_is_string_type(self) -> None:
+        """Entity is a type alias for str."""
+        entity: Entity = "Alice"
 
-        self.assertEqual(entity.text, "Alice")
-        self.assertEqual(entity.label, "PERSON")
-        self.assertEqual(entity.start, 0)
-        self.assertEqual(entity.end, 5)
+        self.assertIsInstance(entity, str)
+        self.assertEqual(entity, "Alice")
+
+    def test_entity_with_unicode(self) -> None:
+        """Entity accepts Unicode characters."""
+        entity: Entity = "Алиса"
+
+        self.assertIsInstance(entity, str)
+        self.assertEqual(entity, "Алиса")
+
+    def test_entity_with_special_characters(self) -> None:
+        """Entity accepts special characters."""
+        entity: Entity = "San Francisco"
+
+        self.assertIsInstance(entity, str)
+        self.assertEqual(entity, "San Francisco")
+
+    def test_entity_with_empty_string(self) -> None:
+        """Entity accepts empty string (though semantically invalid)."""
+        entity: Entity = ""
+
+        self.assertIsInstance(entity, str)
+        self.assertEqual(entity, "")
+
+    def test_entity_type_checking(self) -> None:
+        """Entity type annotation works correctly."""
+        def process_entity(e: Entity) -> str:
+            return e.upper()
+
+        entity: Entity = "OpenAI"
+        result = process_entity(entity)
+
+        self.assertEqual(result, "OPENAI")

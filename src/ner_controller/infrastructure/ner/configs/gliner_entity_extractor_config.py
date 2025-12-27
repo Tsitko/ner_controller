@@ -8,7 +8,7 @@ from typing import Optional
 class GlinerEntityExtractorConfig:
     """Configuration values for GLiNER model loading and inference."""
 
-    model_name: str = "urchade/gliner_small-v2.1"
+    model_name: str = "urchade/gliner_multi-v2.1"
     device: str = "cpu"
     batch_size: int = 8
     cache_dir: Optional[str] = None

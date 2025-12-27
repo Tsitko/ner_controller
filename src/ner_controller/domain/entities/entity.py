@@ -1,13 +1,5 @@
 """Entity extracted from text."""
 
-from dataclasses import dataclass
+from typing import TypeAlias
 
-
-@dataclass(frozen=True)
-class Entity:
-    """Represents a named entity extracted by the NER engine."""
-
-    text: str
-    label: str
-    start: int
-    end: int
+Entity: TypeAlias = str

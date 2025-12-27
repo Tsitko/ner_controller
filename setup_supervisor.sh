@@ -33,6 +33,9 @@ EOF
 echo -e "${YELLOW}Creating logs directory...${NC}"
 mkdir -p ${PROJECT_DIR}/logs
 
+echo -e "${YELLOW}Downloading GLiNER model (first run only)...${NC}"
+${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/download_model.py
+
 echo -e "${YELLOW}Reloading supervisor configuration...${NC}"
 sudo supervisorctl reread
 sudo supervisorctl update
