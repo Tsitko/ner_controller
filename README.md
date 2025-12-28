@@ -29,6 +29,13 @@ Service for Named Entity Recognition (NER) and text processing using GLiNER, reg
 - Generates embeddings via Ollama for each chunk
 - Returns all unique entities and chunked text with embeddings
 
+### Text Processing
+- FastAPI endpoint: `/text/process`
+- Accepts plain text (no base64 encoding)
+- Extracts entities from the full text (no chunking)
+- Generates a single embedding for the full text
+- Returns entities and embedding for the text
+
 ## Requirements
 - Python 3.12
 - venv in project root (`venv/`)
@@ -147,6 +154,28 @@ Process a text file with NER and embeddings.
 ```
 
 **Note:** Entity format has been simplified to plain strings (names only). Labels, positions, and other metadata are removed. Entities are automatically deduplicated using Levenshtein distance (threshold <= 2).
+
+### POST /text/process
+Process a single text with NER and embedding (no chunking, no base64).
+
+**Request:**
+```json
+{
+  "text": "Alice visited Paris and met with OpenAI researchers.",
+  "entity_types": ["Person", "Location", "Organization"]
+}
+```
+
+**Response:**
+```json
+{
+  "text": "Alice visited Paris and met with OpenAI researchers.",
+  "entities": ["Alice", "Paris", "OpenAI", "researchers"],
+  "embedding": [0.1, 0.2, 0.3, ...]
+}
+```
+
+**Note:** If `entity_types` is not specified, uses the default comprehensive list of 23 entity types.
 
 ## Entity Types
 

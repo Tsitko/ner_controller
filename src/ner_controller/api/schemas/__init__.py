@@ -7,6 +7,8 @@ from ner_controller.api.schemas.file_process_response import (
 )
 from ner_controller.api.schemas.hallucination_check_request import HallucinationCheckRequest
 from ner_controller.api.schemas.hallucination_check_response import HallucinationCheckResponse
+from ner_controller.api.schemas.text_process_request import TextProcessRequest
+from ner_controller.api.schemas.text_process_response import TextProcessResponse
 
 __all__ = [
     "FileProcessRequest",
@@ -14,4 +16,6 @@ __all__ = [
     "ChunkSchema",
     "HallucinationCheckRequest",
     "HallucinationCheckResponse",
+    "TextProcessRequest",
+    "TextProcessResponse",
 ]

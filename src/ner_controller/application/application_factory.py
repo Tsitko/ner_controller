@@ -6,12 +6,15 @@ from fastapi import FastAPI
 
 from ner_controller.api.configs.file_router_config import FileRouterConfig
 from ner_controller.api.configs.hallucination_router_config import HallucinationRouterConfig
+from ner_controller.api.configs.text_router_config import TextRouterConfig
 from ner_controller.api.routers.file_router import FileRouter
 from ner_controller.api.routers.hallucination_router import HallucinationRouter
+from ner_controller.api.routers.text_router import TextRouter
 from ner_controller.configs.app_config import AppConfig
 from ner_controller.domain.services.entity_diff_calculator import EntityDiffCalculator
 from ner_controller.domain.services.file_processing_service import FileProcessingService
 from ner_controller.domain.services.hallucination_detection_service import HallucinationDetectionService
+from ner_controller.domain.services.text_processing_service import TextProcessingService
 from ner_controller.infrastructure.chunking.configs.text_chunker_config import TextChunkerConfig
 from ner_controller.infrastructure.chunking.text_chunker import TextChunker
 from ner_controller.infrastructure.embedding.configs.ollama_embedding_generator_config import (
@@ -36,11 +39,13 @@ class ApplicationFactory:
         config: AppConfig,
         service: Optional[HallucinationDetectionService] = None,
         file_processing_service: Optional[FileProcessingService] = None,
+        text_processing_service: Optional[TextProcessingService] = None,
     ) -> None:
         """Initialize the factory with application configuration."""
         self._config = config
         self._service = service
         self._file_processing_service = file_processing_service
+        self._text_processing_service = text_processing_service
 
     def create_app(self) -> FastAPI:
         """Create and configure the FastAPI application instance."""
@@ -60,6 +65,11 @@ class ApplicationFactory:
         file_router = FileRouter(file_router_config, file_processing_service).create_router()
         app.include_router(file_router)
 
+        text_processing_service = self._text_processing_service or self._build_text_processing_service()
+        text_router_config = TextRouterConfig()
+        text_router = TextRouter(text_router_config, text_processing_service).create_router()
+        app.include_router(text_router)
+
         return app
 
     def _build_hallucination_service(self) -> HallucinationDetectionService:
@@ -74,6 +84,12 @@ class ApplicationFactory:
         embedding_generator = OllamaEmbeddingGenerator(OllamaEmbeddingGeneratorConfig())
         text_chunker = TextChunker(TextChunkerConfig())
         return FileProcessingService(entity_extractor, embedding_generator, text_chunker)
+
+    def _build_text_processing_service(self) -> TextProcessingService:
+        """Build the default text processing service."""
+        entity_extractor = self.create_entity_extractor()
+        embedding_generator = OllamaEmbeddingGenerator(OllamaEmbeddingGeneratorConfig())
+        return TextProcessingService(entity_extractor, embedding_generator)
 
     def create_entity_extractor(self) -> CompositeEntityExtractor:
         """
