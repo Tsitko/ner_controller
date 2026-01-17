@@ -37,32 +37,26 @@ class EntityDiffCalculator:
         )
 
     def _deduplicate(self, entities: Sequence[str]) -> list[str]:
-        """Deduplicate entities using Levenshtein distance with threshold <= 2."""
-        return deduplicate_entities(entities, threshold=2)
+        """Deduplicate entities using normalized Levenshtein distance (20% threshold)."""
+        return deduplicate_entities(entities)
 
     def _is_similar_to_any(self, entity: str, entity_list: Sequence[str]) -> bool:
         """
         Check if entity is similar to any entity in the list.
 
-        Uses case-insensitive comparison and Levenshtein distance.
+        Uses normalized similarity (relative Levenshtein distance with 20% threshold).
 
         Args:
             entity: Entity to check.
             entity_list: List of entities to compare against.
 
         Returns:
-            True if entity is similar (Levenshtein distance <= 2) to any entity in the list.
+            True if entity is similar to any entity in the list using normalized similarity.
         """
-        from ner_controller.domain.services.levenshtein_utils import levenshtein_distance
+        from ner_controller.domain.services.levenshtein_utils import normalized_similarity
 
-        entity_normalized = entity.strip().casefold()
         for other in entity_list:
-            other_normalized = other.strip().casefold()
-            # First try exact match (case-insensitive)
-            if entity_normalized == other_normalized:
-                return True
-            # Then try Levenshtein distance
-            if levenshtein_distance(entity_normalized, other_normalized) <= 2:
+            if normalized_similarity(entity, other):
                 return True
         return False
 

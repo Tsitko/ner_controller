@@ -10,7 +10,7 @@ class RegexApiEndpointExtractor(EntityExtractorInterface):
     """Extracts API endpoints from text using regex patterns."""
 
     API_ENDPOINT_PATTERN = re.compile(
-        r'\b(?:POST|GET|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+[a-zA-Z0-9/_-]+',
+        r'\b(?:POST|GET|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+/\S+',
         re.IGNORECASE
     )
 

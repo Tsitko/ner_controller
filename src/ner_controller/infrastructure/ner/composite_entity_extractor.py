@@ -44,5 +44,5 @@ class CompositeEntityExtractor(EntityExtractorInterface):
             entities = extractor.extract(text, entity_types)
             all_entities.extend(entities)
 
-        # Deduplicate using Levenshtein distance
-        return deduplicate_entities(all_entities, threshold=2)
+        # Deduplicate using normalized Levenshtein distance
+        return deduplicate_entities(all_entities)

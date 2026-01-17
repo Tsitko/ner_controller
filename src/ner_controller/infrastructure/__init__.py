@@ -3,8 +3,8 @@
 from ner_controller.infrastructure.chunking import TextChunker, TextChunkerConfig
 from ner_controller.infrastructure.embedding import (
     EmbeddingGenerationError,
-    OllamaEmbeddingGenerator,
-    OllamaEmbeddingGeneratorConfig,
+    LmStudioEmbeddingGenerator,
+    LmStudioEmbeddingGeneratorConfig,
 )
 from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEntityExtractor
 from ner_controller.infrastructure.ner.configs.gliner_entity_extractor_config import (
@@ -14,8 +14,8 @@ from ner_controller.infrastructure.ner.configs.gliner_entity_extractor_config im
 __all__ = [
     "TextChunker",
     "TextChunkerConfig",
-    "OllamaEmbeddingGenerator",
-    "OllamaEmbeddingGeneratorConfig",
+    "LmStudioEmbeddingGenerator",
+    "LmStudioEmbeddingGeneratorConfig",
     "EmbeddingGenerationError",
     "GlinerEntityExtractor",
     "GlinerEntityExtractorConfig",

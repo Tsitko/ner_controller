@@ -1,5 +1,6 @@
 """Unit tests for GlinerEntityExtractor."""
 
+import os
 import sys
 
 import path_setup
@@ -23,6 +24,29 @@ from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEnti
 
 class TestGlinerEntityExtractor(unittest.TestCase):
     """Tests GLiNER extraction behavior."""
+
+    @patch("ner_controller.infrastructure.ner.gliner_entity_extractor.GLiNER")
+    def test_offline_mode_sets_environment(self, gliner_class: Mock) -> None:
+        """Offline mode config sets HF offline environment variables."""
+        fake_model = Mock()
+        fake_model.predict_entities.return_value = []
+        gliner_class.from_pretrained.return_value = fake_model
+
+        with patch.dict(os.environ, {}, clear=True):
+            config = GlinerEntityExtractorConfig(offline_mode=True, local_files_only=True)
+            extractor = GlinerEntityExtractor(config)
+
+            extractor.extract("Alice", ["PERSON"])
+
+            for key, value in config.offline_env_vars.items():
+                self.assertEqual(os.environ.get(key), value)
+
+    def test_offline_mode_requires_local_files(self) -> None:
+        """Offline mode requires local_files_only to be enabled."""
+        config = GlinerEntityExtractorConfig(offline_mode=True, local_files_only=False)
+
+        with self.assertRaises(ValueError):
+            GlinerEntityExtractor(config)
 
     @patch("ner_controller.infrastructure.ner.gliner_entity_extractor.GLiNER")
     def test_extract_returns_entity_names_only(self, gliner_class: Mock) -> None:

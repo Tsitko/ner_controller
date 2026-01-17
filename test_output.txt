@@ -1,0 +1,127 @@
+EEF..............E.................EF...........................................................................................................................................................................................................E...........................E...................F.......................
+======================================================================
+ERROR: e2e.test_file_processing_e2e (unittest.loader._FailedTest.e2e.test_file_processing_e2e)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: e2e.test_file_processing_e2e
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/home/denis/Projects/ner_controller/tests/e2e/test_file_processing_e2e.py", line 16, in <module>
+    from ner_controller.application.application_factory import ApplicationFactory
+  File "/home/denis/Projects/ner_controller/src/ner_controller/application/__init__.py", line 3, in <module>
+    from ner_controller.application.application_factory import ApplicationFactory
+  File "/home/denis/Projects/ner_controller/src/ner_controller/application/application_factory.py", line 15, in <module>
+    from ner_controller.infrastructure.chunking.configs.text_chunker_config import TextChunkerConfig
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/__init__.py", line 9, in <module>
+    from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEntityExtractor
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/ner/gliner_entity_extractor.py", line 5, in <module>
+    from gliner import GLiNER
+ModuleNotFoundError: No module named 'gliner'
+
+
+======================================================================
+ERROR: e2e.test_hallucination_e2e (unittest.loader._FailedTest.e2e.test_hallucination_e2e)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: e2e.test_hallucination_e2e
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/home/denis/Projects/ner_controller/tests/e2e/test_hallucination_e2e.py", line 25, in <module>
+    from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEntityExtractor
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/ner/gliner_entity_extractor.py", line 5, in <module>
+    from gliner import GLiNER
+ModuleNotFoundError: No module named 'gliner'
+
+
+======================================================================
+ERROR: test_pipeline_with_custom_chunk_parameters (integration.domain.test_file_processing_service_integration.TestFileProcessingServiceIntegration.test_pipeline_with_custom_chunk_parameters)
+Service uses custom chunk_size and chunk_overlap correctly.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/denis/Projects/ner_controller/tests/integration/domain/test_file_processing_service_integration.py", line 398, in test_pipeline_with_custom_chunk_parameters
+    mock_chunker.split_text.assert_called_once_with(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'function' object has no attribute 'assert_called_once_with'
+
+======================================================================
+ERROR: test_create_router_endpoint_response_model (unit.api.routers.test_file_router.TestFileRouterCreateRouter.test_create_router_endpoint_response_model)
+Endpoint has correct response model set.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/denis/Projects/ner_controller/tests/unit/api/routers/test_file_router.py", line 88, in test_create_router_endpoint_response_model
+    route = routes[0]
+            ~~~~~~^^^
+IndexError: list index out of range
+
+======================================================================
+ERROR: unit.infrastructure.test_gliner_entity_extractor (unittest.loader._FailedTest.unit.infrastructure.test_gliner_entity_extractor)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: unit.infrastructure.test_gliner_entity_extractor
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/home/denis/Projects/ner_controller/tests/unit/infrastructure/test_gliner_entity_extractor.py", line 14, in <module>
+    from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEntityExtractor
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/ner/gliner_entity_extractor.py", line 5, in <module>
+    from gliner import GLiNER
+ModuleNotFoundError: No module named 'gliner'
+
+
+======================================================================
+ERROR: test_send_batch_request_handles_http_500 (unit.infrastructure.test_ollama_embedding_generator.TestOllamaEmbeddingGeneratorSendBatchRequest.test_send_batch_request_handles_http_500)
+Returns None for all texts when Ollama returns 500.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1390, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/denis/Projects/ner_controller/tests/unit/infrastructure/test_ollama_embedding_generator.py", line 247, in test_send_batch_request_handles_http_500
+    result = self.generator._send_batch_request(["Text 1", "Text 2"])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/embedding/ollama_embedding_generator.py", line 98, in _send_batch_request
+    return self._parse_response(response_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/denis/Projects/ner_controller/src/ner_controller/infrastructure/embedding/ollama_embedding_generator.py", line 127, in _parse_response
+    raise EmbeddingGenerationError(f"Invalid response type: {type(response_data)}")
+ner_controller.infrastructure.embedding.ollama_embedding_generator.EmbeddingGenerationError: Invalid response type: <class 'unittest.mock.Mock'>
+
+======================================================================
+FAIL: test_endpoint_path_and_method (integration.api.test_file_router_integration.TestFileRouterIntegration.test_endpoint_path_and_method)
+Router registers endpoint at correct path with correct method.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/denis/Projects/ner_controller/tests/integration/api/test_file_router_integration.py", line 481, in test_endpoint_path_and_method
+    self.assertEqual(len(process_routes), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_create_router_registers_process_endpoint (unit.api.routers.test_file_router.TestFileRouterCreateRouter.test_create_router_registers_process_endpoint)
+Router registers POST /process endpoint.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/denis/Projects/ner_controller/tests/unit/api/routers/test_file_router.py", line 78, in test_create_router_registers_process_endpoint
+    self.assertEqual(len(routes), 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_overlap_size_is_correct (unit.infrastructure.test_text_chunker.TestTextChunkerOverlapBehavior.test_overlap_size_is_correct)
+Verifies exact overlap size matches chunk_overlap parameter.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/denis/Projects/ner_controller/tests/unit/infrastructure/test_text_chunker.py", line 394, in test_overlap_size_is_correct
+    self.assertEqual(overlap_len, chunk_overlap)
+AssertionError: 0 != 15
+
+----------------------------------------------------------------------
+Ran 312 tests in 0.440s
+
+FAILED (failures=3, errors=6)

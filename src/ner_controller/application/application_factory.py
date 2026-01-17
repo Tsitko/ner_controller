@@ -17,10 +17,12 @@ from ner_controller.domain.services.hallucination_detection_service import Hallu
 from ner_controller.domain.services.text_processing_service import TextProcessingService
 from ner_controller.infrastructure.chunking.configs.text_chunker_config import TextChunkerConfig
 from ner_controller.infrastructure.chunking.text_chunker import TextChunker
-from ner_controller.infrastructure.embedding.configs.ollama_embedding_generator_config import (
-    OllamaEmbeddingGeneratorConfig,
+from ner_controller.infrastructure.embedding.configs.lm_studio_embedding_generator_config import (
+    LmStudioEmbeddingGeneratorConfig,
 )
-from ner_controller.infrastructure.embedding.ollama_embedding_generator import OllamaEmbeddingGenerator
+from ner_controller.infrastructure.embedding.lm_studio_embedding_generator import (
+    LmStudioEmbeddingGenerator,
+)
 from ner_controller.infrastructure.ner.composite_entity_extractor import CompositeEntityExtractor
 from ner_controller.infrastructure.ner.configs.gliner_entity_extractor_config import (
     GlinerEntityExtractorConfig,
@@ -81,14 +83,14 @@ class ApplicationFactory:
     def _build_file_processing_service(self) -> FileProcessingService:
         """Build the default file processing service."""
         entity_extractor = self.create_entity_extractor()
-        embedding_generator = OllamaEmbeddingGenerator(OllamaEmbeddingGeneratorConfig())
+        embedding_generator = LmStudioEmbeddingGenerator(LmStudioEmbeddingGeneratorConfig())
         text_chunker = TextChunker(TextChunkerConfig())
         return FileProcessingService(entity_extractor, embedding_generator, text_chunker)
 
     def _build_text_processing_service(self) -> TextProcessingService:
         """Build the default text processing service."""
         entity_extractor = self.create_entity_extractor()
-        embedding_generator = OllamaEmbeddingGenerator(OllamaEmbeddingGeneratorConfig())
+        embedding_generator = LmStudioEmbeddingGenerator(LmStudioEmbeddingGeneratorConfig())
         return TextProcessingService(entity_extractor, embedding_generator)
 
     def create_entity_extractor(self) -> CompositeEntityExtractor:

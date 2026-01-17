@@ -27,14 +27,11 @@ startretries=3
 stderr_logfile=${PROJECT_DIR}/logs/ner_controller_error.log
 stdout_logfile=${PROJECT_DIR}/logs/ner_controller_output.log
 user=$(whoami)
-environment=PATH="${PROJECT_DIR}/venv/bin:%(ENV_PATH)s",PYTHONPATH="${PROJECT_DIR}/src",HF_HOME="/home/denis/.cache/huggingface",TRANSFORMERS_OFFLINE="1",HF_HUB_OFFLINE="0",HF_HUB_DISABLE_TELEMETRY="1"
+environment=PATH="${PROJECT_DIR}/venv/bin:%(ENV_PATH)s",PYTHONPATH="${PROJECT_DIR}/src",HF_HOME="/home/denis/.cache/huggingface",TRANSFORMERS_OFFLINE="1",HF_HUB_OFFLINE="1",HF_HUB_DISABLE_TELEMETRY="1"
 EOF
 
 echo -e "${YELLOW}Creating logs directory...${NC}"
 mkdir -p ${PROJECT_DIR}/logs
-
-echo -e "${YELLOW}Downloading GLiNER model (first run only)...${NC}"
-${PROJECT_DIR}/venv/bin/python ${PROJECT_DIR}/download_model.py
 
 echo -e "${YELLOW}Reloading supervisor configuration...${NC}"
 sudo supervisorctl reread

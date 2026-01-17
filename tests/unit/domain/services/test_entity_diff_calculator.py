@@ -125,3 +125,39 @@ class TestEntityDiffCalculator(unittest.TestCase):
 
         self.assertEqual(result.potential_hallucinations, ["Los Angeles"])
         self.assertEqual(result.missing_entities, ["New-York"])
+
+    def test_calculate_with_similar_russian_entities(self) -> None:
+        """Calculator merges similar Russian entities using relative threshold."""
+        request_entities = ["Сисма мониторинга", "Сервер базы данных"]
+        response_entities = ["Системы мониторинга", "База данных"]
+
+        result = self._calculator.calculate(request_entities, response_entities)
+
+        # "Сисма мониторинга" and "Системы мониторинга" should match (distance ~3)
+        # "Сервер базы данных" and "База данных" should NOT match (too different)
+        self.assertEqual(result.potential_hallucinations, ["База данных"])
+        self.assertEqual(result.missing_entities, ["Сервер базы данных"])
+
+    def test_calculate_deduplicates_similar_entities_within_list(self) -> None:
+        """Calculator deduplicates similar entities within the same list."""
+        request_entities = ["Система мониторинга", "Системы мониторинга", "API endpoint"]
+        response_entities = ["Системы мониторинга", "API endpoints", "Сервер"]
+
+        result = self._calculator.calculate(request_entities, response_entities)
+
+        # "Система мониторинга" and "Системы мониторинга" should be deduplicated
+        # "API endpoint" and "API endpoints" should match (distance = 1)
+        self.assertEqual(result.potential_hallucinations, ["Сервер"])
+        self.assertEqual(result.missing_entities, [])
+
+    def test_calculate_with_long_entity_names(self) -> None:
+        """Calculator handles long entity names with relative threshold."""
+        request_entities = ["Система распределенного мониторинга событий"]
+        response_entities = ["Системы распределенного мониторинга события"]
+
+        result = self._calculator.calculate(request_entities, response_entities)
+
+        # Long entities with small relative difference should match
+        # Distance ~4, length ~42, 20% threshold = 8.4, so they match
+        self.assertEqual(result.potential_hallucinations, [])
+        self.assertEqual(result.missing_entities, [])

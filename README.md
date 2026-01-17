@@ -5,7 +5,7 @@ Service for Named Entity Recognition (NER) and text processing using GLiNER, reg
 **Models:**
 - GLiNER: `urchade/gliner_multi-v2.1` (multilingual NER)
 - Regex: API endpoints pattern matching
-- Embeddings: `qwen3-embedding:8b` via Ollama (local)
+- Embeddings: `text-embedding-qwen3-embedding-8b` via LM Studio (local)
 
 ## Features
 
@@ -26,7 +26,7 @@ Service for Named Entity Recognition (NER) and text processing using GLiNER, reg
 - Accepts base64-encoded text files
 - Splits text into chunks with overlap
 - Extracts entities from each chunk (GLiNER + regex)
-- Generates embeddings via Ollama for each chunk
+- Generates embeddings via LM Studio for each chunk
 - Returns all unique entities and chunked text with embeddings
 
 ### Text Processing
@@ -39,7 +39,7 @@ Service for Named Entity Recognition (NER) and text processing using GLiNER, reg
 ## Requirements
 - Python 3.12
 - venv in project root (`venv/`)
-- Ollama running locally with `qwen3-embedding:8b` model
+- LM Studio running with OpenAI-compatible API and `text-embedding-qwen3-embedding-8b` model
 
 ## Setup
 ```bash
@@ -65,18 +65,20 @@ To manually download the model:
 venv/bin/python download_model.py
 ```
 
-### Ollama Embedding Model
-Install and run Ollama:
-```bash
-# Install Ollama (https://ollama.ai)
-# Pull the embedding model
-ollama pull qwen3-embedding:8b
+### Base Transformer Model
+GLiNER relies on the base transformer model `microsoft/mdeberta-v3-base`. Ensure it is also cached locally
+to run in offline mode.
 
-# Run Ollama server
-ollama serve
+### LM Studio Embedding Model
+Install and run LM Studio:
+```bash
+# Install LM Studio (https://lmstudio.ai)
+# Load the text-embedding-qwen3-embedding-8b model
+# Start the inference server with OpenAI-compatible API
+# Default: http://localhost:1234 (or configure custom host/port in LmStudioEmbeddingGeneratorConfig)
 ```
 
-The service connects to `http://localhost:11434` by default.
+The service connects to `http://192.168.1.16:1234/v1/embeddings` by default (OpenAI-compatible API).
 
 ## Autostart (WSL)
 1) Enable systemd for WSL by adding this to `/etc/wsl.conf`:

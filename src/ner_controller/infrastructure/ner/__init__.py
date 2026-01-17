@@ -1,6 +1,6 @@
 """NER infrastructure implementations."""
 
-from ner_controller.infrastructure.embedding.ollama_embedding_generator import (
+from ner_controller.infrastructure.embedding.lm_studio_embedding_generator import (
     EmbeddingGenerationError,
 )
 

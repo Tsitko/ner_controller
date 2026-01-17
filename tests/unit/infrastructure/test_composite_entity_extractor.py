@@ -231,7 +231,8 @@ class TestCompositeEntityExtractor(unittest.TestCase):
         self.assertIn("charlie", call_args[0][0])
         self.assertIn("bob", call_args[0][0])
         self.assertIn("david", call_args[0][0])
-        self.assertEqual(call_args[1]["threshold"], 2)
+        # threshold should not be passed (uses default relative threshold)
+        self.assertIsNone(call_args[1].get("threshold"))
 
     def test_with_gliner_and_regex_extractors(self) -> None:
         """Integration test with GLiNER and regex extractors."""

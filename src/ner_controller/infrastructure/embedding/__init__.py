@@ -1,15 +1,15 @@
 """Embedding generation infrastructure."""
 
-from ner_controller.infrastructure.embedding.configs.ollama_embedding_generator_config import (
-    OllamaEmbeddingGeneratorConfig,
+from ner_controller.infrastructure.embedding.configs.lm_studio_embedding_generator_config import (
+    LmStudioEmbeddingGeneratorConfig,
 )
-from ner_controller.infrastructure.embedding.ollama_embedding_generator import (
+from ner_controller.infrastructure.embedding.lm_studio_embedding_generator import (
     EmbeddingGenerationError,
-    OllamaEmbeddingGenerator,
+    LmStudioEmbeddingGenerator,
 )
 
 __all__ = [
-    "OllamaEmbeddingGeneratorConfig",
-    "OllamaEmbeddingGenerator",
+    "LmStudioEmbeddingGeneratorConfig",
+    "LmStudioEmbeddingGenerator",
     "EmbeddingGenerationError",
 ]

@@ -3,6 +3,49 @@
 from typing import Sequence
 
 
+def normalized_similarity(s1: str, s2: str, threshold_percent: float = 0.2) -> bool:
+    """
+    Check if two strings are similar using normalized Levenshtein distance.
+
+    Similarity is determined by:
+    1. Exact case-insensitive match
+    2. Levenshtein distance <= max(3, len * threshold_percent)
+
+    This approach handles both short strings (min absolute distance of 3)
+    and long strings (relative threshold).
+
+    Args:
+        s1: First string.
+        s2: Second string.
+        threshold_percent: Maximum relative distance as percentage of string length.
+                           Default is 0.2 (20%).
+
+    Returns:
+        True if strings are considered similar, False otherwise.
+
+    Examples:
+        >>> normalized_similarity("Apple", "Apples")  # distance=1, max(3, 5*0.2)=3 -> True
+        True
+        >>> normalized_similarity("сисма мониторинга", "системы мониторинга")  # distance~3, max(3, 16*0.2)=4 -> True
+        True
+    """
+    s1_normalized = s1.strip().casefold()
+    s2_normalized = s2.strip().casefold()
+
+    # Exact match
+    if s1_normalized == s2_normalized:
+        return True
+
+    # Calculate Levenshtein distance
+    distance = levenshtein_distance(s1_normalized, s2_normalized)
+
+    # Use relative threshold: max(3, length * 20%)
+    max_length = max(len(s1_normalized), len(s2_normalized))
+    threshold = max(3, int(max_length * threshold_percent))
+
+    return distance <= threshold
+
+
 def levenshtein_distance(s1: str, s2: str) -> int:
     """
     Calculate the Levenshtein distance between two strings.
@@ -34,17 +77,22 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
-def deduplicate_entities(entities: Sequence[str], threshold: int = 2) -> list[str]:
+def deduplicate_entities(entities: Sequence[str], threshold: int | None = None) -> list[str]:
     """
-    Deduplicate entities using Levenshtein distance and case-insensitive comparison.
+    Deduplicate entities using normalized Levenshtein distance.
 
-    Entities are considered duplicates if their Levenshtein distance is <= threshold.
+    Uses relative similarity threshold (20% of string length, min 3) by default.
+    For backward compatibility, accepts absolute threshold parameter.
+
+    Entities are considered duplicates if they are similar according to
+    normalized_similarity function.
+
     Preserves the order of first occurrences.
 
     Args:
         entities: Sequence of entity strings to deduplicate.
-        threshold: Maximum Levenshtein distance to consider entities as duplicates.
-                  Default is 2.
+        threshold: Deprecated. Use None for default relative threshold.
+                  If provided, uses absolute threshold for backward compatibility.
 
     Returns:
         List of deduplicated entities in original order of first occurrences.
@@ -57,18 +105,23 @@ def deduplicate_entities(entities: Sequence[str], threshold: int = 2) -> list[st
     for entity in entities:
         # Check if this entity is similar to any already seen entity
         is_duplicate = False
-        entity_normalized = entity.strip().casefold()
 
         for seen_entity in unique_entities:
-            seen_normalized = seen_entity.strip().casefold()
-            # First try exact match (case-insensitive)
-            if entity_normalized == seen_normalized:
-                is_duplicate = True
-                break
-            # Then try Levenshtein distance
-            if levenshtein_distance(entity_normalized, seen_normalized) <= threshold:
-                is_duplicate = True
-                break
+            if threshold is not None:
+                # Legacy behavior: absolute threshold
+                entity_normalized = entity.strip().casefold()
+                seen_normalized = seen_entity.strip().casefold()
+                if entity_normalized == seen_normalized:
+                    is_duplicate = True
+                    break
+                if levenshtein_distance(entity_normalized, seen_normalized) <= threshold:
+                    is_duplicate = True
+                    break
+            else:
+                # New behavior: relative threshold
+                if normalized_similarity(entity, seen_entity):
+                    is_duplicate = True
+                    break
 
         if not is_duplicate:
             unique_entities.append(entity.strip())
