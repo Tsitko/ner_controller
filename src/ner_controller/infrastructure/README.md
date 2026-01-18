@@ -2,6 +2,9 @@
 
 External integrations such as GLiNER-backed NER extractors and LM Studio embedding generation.
 
+Notes:
+- Regex API endpoint extractor matches HTTP methods followed by a leading-slash path.
+
 ## GLiNER Configuration
 
 The service uses `urchade/gliner_multi-v2.1` model for multilingual NER.
