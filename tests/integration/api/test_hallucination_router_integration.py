@@ -60,7 +60,7 @@ class TestHallucinationRouterIntegration(unittest.TestCase):
         payload = HallucinationCheckRequest(
             request="Prompt",
             response="Answer",
-            entities_types=["PERSON"],
+            entity_types=["PERSON"],
         )
 
         response = route.endpoint(payload)

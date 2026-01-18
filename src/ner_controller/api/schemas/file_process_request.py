@@ -1,6 +1,6 @@
 """Request schema for file processing."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class FileProcessRequest(BaseModel):
@@ -28,4 +28,5 @@ class FileProcessRequest(BaseModel):
     entity_types: list[str] | None = Field(
         None,
         description="Entity types to extract. None uses default comprehensive list.",
+        validation_alias=AliasChoices("entity_types", "entities_types"),
     )

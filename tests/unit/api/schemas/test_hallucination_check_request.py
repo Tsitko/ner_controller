@@ -20,14 +20,26 @@ class TestHallucinationCheckRequest(unittest.TestCase):
         payload = {
             "request": "Prompt",
             "response": "Answer",
-            "entities_types": ["PERSON"],
+            "entity_types": ["PERSON"],
         }
 
         model = HallucinationCheckRequest(**payload)
 
         self.assertEqual(model.request, "Prompt")
         self.assertEqual(model.response, "Answer")
-        self.assertEqual(model.entities_types, ["PERSON"])
+        self.assertEqual(model.entity_types, ["PERSON"])
+
+    def test_accepts_legacy_entities_types_alias(self) -> None:
+        """Schema accepts legacy entities_types alias."""
+        payload = {
+            "request": "Prompt",
+            "response": "Answer",
+            "entities_types": ["PERSON"],
+        }
+
+        model = HallucinationCheckRequest(**payload)
+
+        self.assertEqual(model.entity_types, ["PERSON"])
 
     def test_missing_fields_raises_validation_error(self) -> None:
         """Schema rejects payloads with missing fields."""

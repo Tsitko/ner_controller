@@ -37,6 +37,18 @@ class TestTextProcessRequestValidation(unittest.TestCase):
         self.assertEqual(request.text, "Alice visited Paris.")
         self.assertEqual(request.entity_types, ["Person", "Location"])
 
+    def test_valid_request_with_legacy_entities_types(self) -> None:
+        """Accepts valid request with legacy entities_types alias."""
+        payload = {
+            "text": "Alice visited Paris.",
+            "entities_types": ["Person", "Location"],
+        }
+
+        request = TextProcessRequest(**payload)
+
+        self.assertEqual(request.text, "Alice visited Paris.")
+        self.assertEqual(request.entity_types, ["Person", "Location"])
+
     def test_missing_text_raises_validation_error(self) -> None:
         """Raises ValidationError when text field is missing."""
         payload = {

@@ -49,6 +49,19 @@ class TestFileProcessRequestValidation(unittest.TestCase):
         self.assertEqual(request.chunk_overlap, 500)
         self.assertEqual(request.entity_types, ["PERSON", "ORG"])
 
+    def test_valid_request_with_legacy_entities_types(self) -> None:
+        """Accepts legacy entities_types alias."""
+        payload = {
+            "file": base64.b64encode(b"Content").decode(),
+            "file_name": "doc.txt",
+            "file_id": "file-456",
+            "entities_types": ["PERSON", "ORG"],
+        }
+
+        request = FileProcessRequest(**payload)
+
+        self.assertEqual(request.entity_types, ["PERSON", "ORG"])
+
     def test_valid_request_with_file_path_none(self) -> None:
         """Accepts file_path explicitly set to None."""
         payload = {

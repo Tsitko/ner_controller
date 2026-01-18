@@ -111,7 +111,7 @@ Detect potential LLM hallucinations by comparing entities.
 {
   "request": "Alice went to Paris and met OpenAI researchers.",
   "response": "Bob visited Paris and joined Anthropic.",
-  "entities_types": ["Person", "Location", "Organization"]
+  "entity_types": ["Person", "Location", "Organization"]
 }
 ```
 
@@ -122,6 +122,8 @@ Detect potential LLM hallucinations by comparing entities.
   "missing_entities": ["Alice", "OpenAI researchers"]
 }
 ```
+
+**Note:** `entity_types` is the preferred field name. The legacy `entities_types` alias is still accepted.
 
 ### POST /file/process
 Process a text file with NER and embeddings.
@@ -156,6 +158,7 @@ Process a text file with NER and embeddings.
 ```
 
 **Note:** Entity format has been simplified to plain strings (names only). Labels, positions, and other metadata are removed. Entities are automatically deduplicated using Levenshtein distance (threshold <= 2).
+**Note:** `entity_types` is the preferred field name. The legacy `entities_types` alias is still accepted.
 
 ### POST /text/process
 Process a single text with NER and embedding (no chunking, no base64).
@@ -178,6 +181,7 @@ Process a single text with NER and embedding (no chunking, no base64).
 ```
 
 **Note:** If `entity_types` is not specified, uses the default comprehensive list of 23 entity types.
+**Note:** `entity_types` is the preferred field name. The legacy `entities_types` alias is still accepted.
 
 ## Entity Types
 

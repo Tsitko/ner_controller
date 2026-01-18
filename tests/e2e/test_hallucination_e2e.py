@@ -89,7 +89,7 @@ class TestHallucinationE2E(unittest.TestCase):
         payload = HallucinationCheckRequest(
             request=request_text,
             response=response_text,
-            entities_types=entity_types,
+            entity_types=entity_types,
         )
 
         response = route.endpoint(payload)
@@ -99,7 +99,7 @@ class TestHallucinationE2E(unittest.TestCase):
             {
                 "request": request_text,
                 "response": response_text,
-                "entities_types": entity_types,
+                "entity_types": entity_types,
             },
         )
         print(
@@ -116,7 +116,7 @@ class TestHallucinationE2E(unittest.TestCase):
             msg=(
                 "Expected list output for potential_hallucinations. "
                 f"Input: request={request_text!r}, response={response_text!r}, "
-                f"entities_types={entity_types}. Output={response.potential_hallucinations!r}"
+                f"entity_types={entity_types}. Output={response.potential_hallucinations!r}"
             ),
         )
         self.assertIsInstance(
@@ -125,7 +125,7 @@ class TestHallucinationE2E(unittest.TestCase):
             msg=(
                 "Expected list output for missing_entities. "
                 f"Input: request={request_text!r}, response={response_text!r}, "
-                f"entities_types={entity_types}. Output={response.missing_entities!r}"
+                f"entity_types={entity_types}. Output={response.missing_entities!r}"
             ),
         )
         self.assertEqual(
@@ -155,7 +155,7 @@ class TestHallucinationE2E(unittest.TestCase):
 
         print(
             "NER input:",
-            {"text": text, "entities_types": entity_types},
+            {"text": text, "entity_types": entity_types},
         )
         print(
             "NER output:",

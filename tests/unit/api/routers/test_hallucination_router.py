@@ -35,7 +35,7 @@ class TestHallucinationRouter(unittest.TestCase):
         request_model = HallucinationCheckRequest(
             request="Prompt",
             response="Answer",
-            entities_types=["PERSON"],
+            entity_types=["PERSON"],
         )
 
         response = router.handle_hallucination_check(request_model)

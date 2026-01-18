@@ -36,13 +36,13 @@ class HallucinationRouter:
         request: HallucinationCheckRequest,
     ) -> HallucinationCheckResponse:
         """Handle a hallucination check request."""
-        if not request.entities_types:
-            raise HTTPException(status_code=400, detail="entities_types must be provided.")
+        if not request.entity_types:
+            raise HTTPException(status_code=400, detail="entity_types must be provided.")
 
         result = self._service.detect(
             request_text=request.request,
             response_text=request.response,
-            entity_types=request.entities_types,
+            entity_types=request.entity_types,
         )
         return HallucinationCheckResponse(
             potential_hallucinations=result.potential_hallucinations,
