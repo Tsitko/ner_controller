@@ -17,7 +17,10 @@ class TextProcessRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Plain text string to process.")
     entity_types: list[str] | None = Field(
         None,
-        description="Entity types to extract. None uses default comprehensive list.",
+        description=(
+            "Entity types to extract. None uses default comprehensive list. "
+            "Accepts `entity_types` (preferred) or legacy `entities_types`."
+        ),
         validation_alias=AliasChoices("entity_types", "entities_types"),
     )
 

@@ -59,7 +59,6 @@ class ApplicationFactory:
         app.include_router(
             hallucination_router,
             prefix=hallucination_router_config.prefix,
-            tags=list(hallucination_router_config.tags),
         )
 
         file_processing_service = self._file_processing_service or self._build_file_processing_service()

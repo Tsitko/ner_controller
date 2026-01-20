@@ -27,6 +27,9 @@ class FileProcessRequest(BaseModel):
     chunk_size: int = Field(3000, description="Maximum characters per chunk.")
     entity_types: list[str] | None = Field(
         None,
-        description="Entity types to extract. None uses default comprehensive list.",
+        description=(
+            "Entity types to extract. None uses default comprehensive list. "
+            "Accepts `entity_types` (preferred) or legacy `entities_types`."
+        ),
         validation_alias=AliasChoices("entity_types", "entities_types"),
     )

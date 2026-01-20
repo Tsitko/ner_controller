@@ -5,3 +5,4 @@ Core package providing API, domain logic, and infrastructure for the hallucinati
 Notes:
 - Request schemas accept legacy `entities_types` in addition to `entity_types`.
 - Entity deduplication uses normalized Levenshtein similarity (relative threshold).
+- OpenAPI field descriptions explicitly mention the legacy `entities_types` alias.

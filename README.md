@@ -124,6 +124,7 @@ Detect potential LLM hallucinations by comparing entities.
 ```
 
 **Note:** `entity_types` is the preferred field name. The legacy `entities_types` alias is still accepted.
+**Note:** OpenAPI field descriptions explicitly mention the legacy `entities_types` alias.
 
 ### POST /file/process
 Process a text file with NER and embeddings.
