@@ -64,6 +64,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
             batch_size=4,
             cache_dir="/tmp/gliner-cache",
             local_files_only=True,
+            offline_mode=False,
         )
         extractor = GlinerEntityExtractor(config)
 
@@ -75,6 +76,8 @@ class TestGlinerEntityExtractor(unittest.TestCase):
             local_files_only=True,
         )
         fake_model.predict_entities.assert_called_once()
+        predict_call = fake_model.predict_entities.call_args
+        self.assertEqual(predict_call.kwargs.get("threshold"), 0.2)
         self.assertEqual(len(result), 2)
         self.assertIn("Alice", result)
         self.assertIn("OpenAI", result)
@@ -95,7 +98,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         ]
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("Alice and Bob and Alice", ["PERSON"])
 
@@ -111,7 +114,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         fake_model.predict_entities.return_value = []
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         extractor.extract("A", ["PERSON"])
         extractor.extract("B", ["PERSON"])
@@ -126,7 +129,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         fake_model.predict_entities.return_value = []
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("No entities here", ["PERSON"])
 
@@ -145,7 +148,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         ]
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("Charlie, Alice, Bob, Alice", ["PERSON"])
 
@@ -162,7 +165,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         ]
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("Алиса посетила Париж", ["PERSON", "LOCATION"])
 
@@ -180,7 +183,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         ]
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("мосбилет мосбилета", ["ORG", "LOCATION"])
 
@@ -198,7 +201,7 @@ class TestGlinerEntityExtractor(unittest.TestCase):
         ]
         gliner_class.from_pretrained.return_value = fake_model
 
-        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig(offline_mode=False))
 
         result = extractor.extract("Apple and Apple", ["ORG", "PRODUCT"])
 

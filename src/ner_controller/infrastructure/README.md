@@ -1,6 +1,6 @@
 # Infrastructure Layer
 
-External integrations such as GLiNER-backed NER extractors and LM Studio embedding generation.
+External integrations such as GLiNER/Natasha-backed NER extractors and LM Studio embedding generation.
 
 Notes:
 - Regex API endpoint extractor matches HTTP methods followed by a leading-slash path.
@@ -23,24 +23,35 @@ The service uses `urchade/gliner_multi-v2.1` model for multilingual NER.
 
 See `ner/configs/gliner_entity_extractor_config.py` for all settings:
 - `model_name`: HuggingFace model identifier
+- `base_model_name`: Base transformer required by GLiNER tokenizer
 - `device`: CPU or GPU device
 - `cache_dir`: Custom cache directory (None = default HF cache)
 - `local_files_only`: Restrict to cached models only
 - `offline_mode`: Enforce offline-only loading
 - `offline_env_vars`: Environment variables applied to disable network access
 
+## Natasha Configuration
+
+The service also uses Natasha (Slovnet NER) for additional Russian entity extraction.
+
+See `ner/configs/natasha_entity_extractor_config.py`:
+- `cache_dir`: Local directory with Natasha models
+- `navec_model_filename`: Navec embedding model file
+- `ner_model_filename`: Slovnet NER model file
+
 ## LM Studio Embedding Configuration
 
 The service uses LM Studio with OpenAI-compatible API for text embeddings.
+Embedding requests are serialized to avoid sending new requests before previous ones complete.
 
 ### Configuration
 
 See `embedding/configs/lm_studio_embedding_generator_config.py` for all settings:
-- `base_url`: LM Studio server URL (default: `http://192.168.1.16:1234`)
+- `base_url`: LM Studio server URL (default: `http://localhost:1234`)
 - `model`: Model name (default: `text-embedding-qwen3-embedding-8b`)
 - `embedding_endpoint`: OpenAI-compatible endpoint (default: `/v1/embeddings`)
-- `batch_size`: Number of texts per request (default: 20)
-- `request_timeout`: Request timeout in seconds (default: 60)
+- `batch_size`: Number of texts per request (default: 4)
+- `request_timeout`: Request timeout in seconds (default: 180)
 
 ### API Format
 

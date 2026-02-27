@@ -1,6 +1,8 @@
 """Service for processing files with NER and embeddings."""
 
 import base64
+import logging
+import re
 from typing import Sequence
 
 from ner_controller.domain.entities.file_chunk import FileChunk
@@ -8,6 +10,8 @@ from ner_controller.domain.entities.file_processing_result import FileProcessing
 from ner_controller.domain.interfaces.embedding_generator_interface import EmbeddingGeneratorInterface
 from ner_controller.domain.interfaces.entity_extractor_interface import EntityExtractorInterface
 from ner_controller.domain.interfaces.text_chunker_interface import TextChunkerInterface
+
+logger = logging.getLogger(__name__)
 
 
 # Default entity types as specified in requirements
@@ -37,6 +41,7 @@ DEFAULT_ENTITY_TYPES = [
 
 DEFAULT_CHUNK_SIZE = 3000
 DEFAULT_CHUNK_OVERLAP = 300
+NER_CHUNK_SIZE = 1200
 
 
 class FileProcessingService:
@@ -117,6 +122,11 @@ class FileProcessingService:
 
         # Extract entities from each chunk
         chunks_with_entities = self._extract_entities_from_chunks(chunks, target_entity_types)
+        logger.info(
+            "Extracted entities from %d chunks; per-chunk counts=%s",
+            len(chunks_with_entities),
+            [len(chunk.entities) for chunk in chunks_with_entities],
+        )
 
         # Generate embeddings for chunks
         chunks_with_embeddings = self._generate_embeddings_for_chunks(chunks_with_entities)
@@ -167,7 +177,7 @@ class FileProcessingService:
         """
         chunks_with_entities = []
         for chunk in chunks:
-            entities = self._entity_extractor.extract(chunk.text, entity_types)
+            entities = self._extract_entities_for_chunk(chunk, entity_types)
             updated_chunk = FileChunk(
                 id=chunk.id,
                 text=chunk.text,
@@ -176,6 +186,90 @@ class FileProcessingService:
             )
             chunks_with_entities.append(updated_chunk)
         return chunks_with_entities
+
+    def _extract_entities_for_chunk(self, chunk: FileChunk, entity_types: list[str]) -> list[str]:
+        """Extract entities for one main chunk using smaller NER sub-chunks."""
+        from ner_controller.domain.services.levenshtein_utils import deduplicate_entities
+
+        extracted_entities: list[str] = []
+        for sub_chunk_text in self._split_text_for_ner(chunk.text):
+            try:
+                sub_chunk_entities = self._entity_extractor.extract(sub_chunk_text, entity_types)
+                extracted_entities.extend(sub_chunk_entities)
+            except Exception as exc:
+                logger.error(
+                    "Entity extraction failed for chunk_id=%s (sub_len=%d): %s",
+                    chunk.id,
+                    len(sub_chunk_text),
+                    exc,
+                )
+
+        return deduplicate_entities(extracted_entities, threshold=2)
+
+    def _split_text_for_ner(self, text: str) -> list[str]:
+        """Split text for NER using sentence boundaries and word-safe fallback."""
+        if not text:
+            return []
+        if len(text) <= NER_CHUNK_SIZE:
+            return [text]
+
+        sub_chunks: list[str] = []
+        current_chunk = ""
+
+        for sentence in self._split_into_sentences(text):
+            if len(sentence) > NER_CHUNK_SIZE:
+                if current_chunk:
+                    sub_chunks.append(current_chunk)
+                    current_chunk = ""
+                sub_chunks.extend(self._split_long_sentence_by_words(sentence))
+                continue
+
+            if not current_chunk:
+                current_chunk = sentence
+                continue
+
+            candidate = f"{current_chunk} {sentence}"
+            if len(candidate) <= NER_CHUNK_SIZE:
+                current_chunk = candidate
+            else:
+                sub_chunks.append(current_chunk)
+                current_chunk = sentence
+
+        if current_chunk:
+            sub_chunks.append(current_chunk)
+
+        return sub_chunks
+
+    def _split_into_sentences(self, text: str) -> list[str]:
+        """Split text into sentence-like units."""
+        parts = re.split(r"(?<=[.!?])\s+|\n+", text)
+        return [part.strip() for part in parts if part and part.strip()]
+
+    def _split_long_sentence_by_words(self, sentence: str) -> list[str]:
+        """Split a long sentence into chunks without breaking words."""
+        words = sentence.split()
+        if not words:
+            return []
+
+        chunks: list[str] = []
+        current_chunk = ""
+
+        for word in words:
+            if not current_chunk:
+                current_chunk = word
+                continue
+
+            candidate = f"{current_chunk} {word}"
+            if len(candidate) <= NER_CHUNK_SIZE:
+                current_chunk = candidate
+            else:
+                chunks.append(current_chunk)
+                current_chunk = word
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        return chunks
 
     def _generate_embeddings_for_chunks(
         self,
@@ -197,7 +291,21 @@ class FileProcessingService:
             return []
 
         texts = [chunk.text for chunk in chunks]
-        embeddings = self._embedding_generator.generate_embeddings(texts)
+        try:
+            embeddings = self._embedding_generator.generate_embeddings(texts)
+        except Exception as exc:
+            logger.error("Embedding generation failed for %d chunks: %s", len(chunks), exc)
+            embeddings = [None] * len(chunks)
+        if len(embeddings) != len(chunks):
+            logger.error(
+                "Embedding response size mismatch: expected=%d, actual=%d",
+                len(chunks),
+                len(embeddings),
+            )
+            normalized_embeddings = list(embeddings)[: len(chunks)]
+            if len(normalized_embeddings) < len(chunks):
+                normalized_embeddings.extend([None] * (len(chunks) - len(normalized_embeddings)))
+            embeddings = normalized_embeddings
 
         chunks_with_embeddings = []
         for chunk, embedding in zip(chunks, embeddings):
@@ -229,4 +337,11 @@ class FileProcessingService:
             all_entities.extend(chunk.entities)
 
         # Deduplicate using Levenshtein distance with threshold <= 2
-        return deduplicate_entities(all_entities, threshold=2)
+        deduplicated = deduplicate_entities(all_entities, threshold=2)
+        logger.info(
+            "Collected entities across chunks: raw=%d, deduplicated=%d, chunks=%d",
+            len(all_entities),
+            len(deduplicated),
+            len(chunks),
+        )
+        return deduplicated

@@ -27,7 +27,11 @@ from ner_controller.infrastructure.ner.composite_entity_extractor import Composi
 from ner_controller.infrastructure.ner.configs.gliner_entity_extractor_config import (
     GlinerEntityExtractorConfig,
 )
+from ner_controller.infrastructure.ner.configs.natasha_entity_extractor_config import (
+    NatashaEntityExtractorConfig,
+)
 from ner_controller.infrastructure.ner.gliner_entity_extractor import GlinerEntityExtractor
+from ner_controller.infrastructure.ner.natasha_entity_extractor import NatashaEntityExtractor
 from ner_controller.infrastructure.ner.regex_api_endpoint_extractor import (
     RegexApiEndpointExtractor,
 )
@@ -96,9 +100,10 @@ class ApplicationFactory:
         """
         Create a composite entity extractor instance.
 
-        The composite extractor runs GLiNER first, then the regex-based API endpoint extractor.
+        The composite extractor runs GLiNER, Natasha, and regex extractors.
         Results are combined and deduplicated.
         """
         gliner_extractor = GlinerEntityExtractor(GlinerEntityExtractorConfig())
+        natasha_extractor = NatashaEntityExtractor(NatashaEntityExtractorConfig())
         regex_extractor = RegexApiEndpointExtractor()
-        return CompositeEntityExtractor([gliner_extractor, regex_extractor])
+        return CompositeEntityExtractor([gliner_extractor, natasha_extractor, regex_extractor])

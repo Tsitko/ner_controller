@@ -41,6 +41,14 @@ class MockExtractor(EntityExtractorInterface):
         return self._entities.copy()
 
 
+class FailingExtractor(EntityExtractorInterface):
+    """Mock extractor that always fails."""
+
+    def extract(self, text: str, entity_types: list[str]) -> list[str]:
+        """Raise runtime error to simulate extractor failure."""
+        raise RuntimeError("Extractor failure")
+
+
 class TestCompositeEntityExtractor(unittest.TestCase):
     """Tests composite entity extractor behavior."""
 
@@ -179,6 +187,16 @@ class TestCompositeEntityExtractor(unittest.TestCase):
         result = composite.extract("text", ["Entity"])
 
         self.assertEqual(len(result), 0)
+
+    def test_extract_continues_when_one_extractor_fails(self) -> None:
+        """Composite extractor skips failing extractor and keeps others."""
+        working = MockExtractor(["Alice"])
+        failing = FailingExtractor()
+
+        composite = CompositeEntityExtractor([failing, working])
+        result = composite.extract("text", ["Entity"])
+
+        self.assertEqual(result, ["Alice"])
 
     def test_extract_handles_unicode_entities(self) -> None:
         """Extractor handles Unicode entities from all extractors."""

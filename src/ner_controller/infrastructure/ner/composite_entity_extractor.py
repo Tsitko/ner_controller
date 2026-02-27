@@ -1,9 +1,12 @@
 """Composite entity extractor implementation."""
 
+import logging
 from typing import Sequence
 
 from ner_controller.domain.interfaces.entity_extractor_interface import EntityExtractorInterface
 from ner_controller.domain.services.levenshtein_utils import deduplicate_entities
+
+logger = logging.getLogger(__name__)
 
 
 class CompositeEntityExtractor(EntityExtractorInterface):
@@ -41,7 +44,15 @@ class CompositeEntityExtractor(EntityExtractorInterface):
 
         # Run each extractor and collect results
         for extractor in self._extractors:
-            entities = extractor.extract(text, entity_types)
+            try:
+                entities = extractor.extract(text, entity_types)
+            except Exception as exc:
+                logger.error(
+                    "Extractor %s failed: %s",
+                    extractor.__class__.__name__,
+                    exc,
+                )
+                continue
             all_entities.extend(entities)
 
         # Deduplicate using normalized Levenshtein distance

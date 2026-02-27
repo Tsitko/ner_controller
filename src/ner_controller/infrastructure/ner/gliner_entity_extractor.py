@@ -3,6 +3,8 @@
 import json
 import logging
 import os
+import re
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -35,13 +37,77 @@ class GlinerEntityExtractor(EntityExtractorInterface):
             return []
 
         model = self._load_model()
-        predictions = model.predict_entities(text, list(entity_types))
+        predictions: list[dict] = []
+        segments = self._split_for_model(text)
+
+        for segment in segments:
+            if not segment:
+                continue
+            try:
+                segment_predictions = model.predict_entities(
+                    segment,
+                    list(entity_types),
+                    threshold=self._config.prediction_threshold,
+                )
+                predictions.extend(segment_predictions)
+            except Exception as exc:
+                # Do not fail entire document because one segment could not be processed.
+                logger.warning(
+                    "GLiNER failed for segment (len=%d): %s",
+                    len(segment),
+                    exc,
+                )
+                continue
 
         # Extract only entity text from predictions
         entities = [prediction.get("text", "") for prediction in predictions]
 
         # Apply deduplication with Levenshtein distance (threshold <= 2)
         return deduplicate_entities(entities, threshold=2)
+
+    def _split_for_model(self, text: str) -> list[str]:
+        """
+        Split long text into model-friendly segments.
+
+        GLiNER can warn/truncate long sentences internally. Segmenting on natural
+        boundaries improves stability and avoids single-call failures.
+        """
+        max_chars = self._config.max_segment_chars
+        min_chars = self._config.min_segment_chars
+
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            return []
+        if len(normalized) <= max_chars:
+            return [normalized]
+
+        segments: list[str] = []
+        start = 0
+        text_len = len(normalized)
+        boundary_chars = ".!?;:\n"
+
+        while start < text_len:
+            tentative_end = min(start + max_chars, text_len)
+            if tentative_end == text_len:
+                segments.append(normalized[start:tentative_end].strip())
+                break
+
+            split_pos = -1
+            search_from = max(start + min_chars, tentative_end - 300)
+            for idx in range(tentative_end, search_from, -1):
+                if normalized[idx - 1] in boundary_chars:
+                    split_pos = idx
+                    break
+
+            if split_pos == -1:
+                split_pos = tentative_end
+
+            segment = normalized[start:split_pos].strip()
+            if segment:
+                segments.append(segment)
+            start = split_pos
+
+        return segments
 
     def _load_model(self) -> GLiNER:
         """Load the GLiNER model if it hasn't been loaded yet."""
@@ -70,6 +136,22 @@ class GlinerEntityExtractor(EntityExtractorInterface):
         """Apply offline environment variables to prevent network access."""
         for key, value in self._config.offline_env_vars.items():
             os.environ[key] = value
+        warnings.filterwarnings(
+            "ignore",
+            message=r"The tokenizer you are loading from .*incorrect regex pattern.*",
+        )
+        try:
+            from transformers.utils import logging as transformers_logging
+
+            transformers_logging.set_verbosity_error()
+        except Exception:
+            logger.debug("Could not set transformers logging verbosity.")
+        try:
+            from huggingface_hub import logging as hf_logging
+
+            hf_logging.set_verbosity_error()
+        except Exception:
+            logger.debug("Could not set huggingface_hub logging verbosity.")
 
     def _prepare_local_model_dir(self) -> Path:
         """Ensure local GLiNER model directory contains tokenizer files."""
@@ -78,7 +160,7 @@ class GlinerEntityExtractor(EntityExtractorInterface):
         if not gliner_config_path.exists():
             raise FileNotFoundError(f"Missing GLiNER config at {gliner_config_path}")
 
-        base_model_name = self._read_base_model_name(gliner_config_path)
+        base_model_name = self._read_base_model_name(gliner_config_path) or self._config.base_model_name
         if base_model_name:
             base_model_dir = self._snapshot_path(base_model_name)
             self._ensure_tokenizer_files(model_dir, base_model_dir)

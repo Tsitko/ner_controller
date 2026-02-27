@@ -20,8 +20,10 @@ class TestGlinerEntityExtractorConfig(unittest.TestCase):
         config = GlinerEntityExtractorConfig()
 
         self.assertEqual(config.model_name, "urchade/gliner_multi-v2.1")
+        self.assertEqual(config.base_model_name, "microsoft/mdeberta-v3-base")
         self.assertEqual(config.device, "cpu")
         self.assertEqual(config.batch_size, 8)
+        self.assertEqual(config.prediction_threshold, 0.2)
         self.assertTrue(config.local_files_only)
         self.assertTrue(config.offline_mode)
         self.assertIn("HF_HUB_OFFLINE", config.offline_env_vars)

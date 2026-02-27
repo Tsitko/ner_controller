@@ -1,6 +1,7 @@
 """LM Studio-based embedding generation implementation with OpenAI-compatible API."""
 
 import logging
+import threading
 from typing import Sequence
 
 import httpx
@@ -19,12 +20,26 @@ class EmbeddingGenerationError(Exception):
     pass
 
 
+class EmbeddingConnectionError(EmbeddingGenerationError):
+    """Raised when LM Studio is unreachable."""
+
+    pass
+
+
+class EmbeddingTimeoutError(EmbeddingGenerationError):
+    """Raised when LM Studio request times out."""
+
+    pass
+
+
 class LmStudioEmbeddingGenerator(EmbeddingGeneratorInterface):
     """
     Generates text embeddings using LM Studio with OpenAI-compatible API.
 
     Communicates with LM Studio instance to generate embeddings for text batches.
     """
+
+    _request_lock = threading.Lock()
 
     def __init__(self, config: LmStudioEmbeddingGeneratorConfig) -> None:
         """
@@ -59,13 +74,52 @@ class LmStudioEmbeddingGenerator(EmbeddingGeneratorInterface):
             return []
 
         all_embeddings = []
-
-        for i in range(0, len(texts), self._config.batch_size):
-            batch = tuple(texts[i : i + self._config.batch_size])
-            batch_embeddings = self._send_batch_request(batch)
-            all_embeddings.extend(batch_embeddings)
+        with self._request_lock:
+            for i in range(0, len(texts), self._config.batch_size):
+                batch = tuple(texts[i : i + self._config.batch_size])
+                batch_embeddings = self._send_batch_request_with_fallback(batch)
+                all_embeddings.extend(batch_embeddings)
 
         return all_embeddings
+
+    def _send_batch_request_with_fallback(
+        self,
+        texts: Sequence[str],
+    ) -> Sequence[Sequence[float] | None]:
+        """
+        Send batch request with adaptive fallback.
+
+        If the batch fails, recursively split it into smaller batches and retry.
+        Single-text failures return None for that text.
+        """
+        if not texts:
+            return []
+
+        try:
+            return self._send_batch_request(texts)
+        except (EmbeddingTimeoutError, EmbeddingConnectionError) as exc:
+            logger.warning(
+                "Embedding batch skipped (size=%d) due to transport error: %s",
+                len(texts),
+                exc,
+            )
+            return [None] * len(texts)
+        except EmbeddingGenerationError as exc:
+            if len(texts) == 1:
+                logger.error("Embedding request failed for single text: %s", exc)
+                return [None]
+
+            mid = len(texts) // 2
+            logger.warning(
+                "Embedding batch failed (size=%d), splitting into %d and %d: %s",
+                len(texts),
+                mid,
+                len(texts) - mid,
+                exc,
+            )
+            left = self._send_batch_request_with_fallback(texts[:mid])
+            right = self._send_batch_request_with_fallback(texts[mid:])
+            return [*left, *right]
 
     def _send_batch_request(
         self,
@@ -105,8 +159,10 @@ class LmStudioEmbeddingGenerator(EmbeddingGeneratorInterface):
                 return [None] * len(texts)
             else:
                 raise EmbeddingGenerationError(f"LM Studio request failed: {e}")
-        except (httpx.ConnectError, httpx.TimeoutException) as e:
-            raise EmbeddingGenerationError(f"Cannot connect to LM Studio service: {e}")
+        except httpx.ConnectError as e:
+            raise EmbeddingConnectionError(f"Cannot connect to LM Studio service: {e}")
+        except httpx.TimeoutException as e:
+            raise EmbeddingTimeoutError(f"LM Studio request timed out: {e}")
         except Exception as e:
             logger.error(f"Unexpected error generating embeddings: {e}")
             return [None] * len(texts)

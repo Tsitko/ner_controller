@@ -1,9 +1,10 @@
 # NER Controller
 
-Service for Named Entity Recognition (NER) and text processing using GLiNER, regex patterns, and embedding models.
+Service for Named Entity Recognition (NER) and text processing using GLiNER, Natasha, regex patterns, and embedding models.
 
 **Models:**
 - GLiNER: `urchade/gliner_multi-v2.1` (multilingual NER)
+- Natasha: `slovnet_ner_news_v1` + `navec_news_v1_1B_250K_300d_100q` (Russian NER)
 - Regex: API endpoints pattern matching
 - Embeddings: `text-embedding-qwen3-embedding-8b` via LM Studio (local)
 
@@ -57,17 +58,15 @@ OpenAPI docs are available at `http://localhost:1304/docs`.
 ## Model Download
 
 ### GLiNER Model
-The GLiNER model (`urchade/gliner_multi-v2.1`) is downloaded automatically on first run of `setup_supervisor.sh`
-and cached in `~/.cache/huggingface`. Subsequent runs use the cached model with `TRANSFORMERS_OFFLINE=1`.
+The GLiNER model (`urchade/gliner_multi-v2.1`), base model (`microsoft/mdeberta-v3-base`),
+and Natasha models must be downloaded once and then used strictly from local cache.
 
 To manually download the model:
 ```bash
 venv/bin/python download_model.py
 ```
 
-### Base Transformer Model
-GLiNER relies on the base transformer model `microsoft/mdeberta-v3-base`. Ensure it is also cached locally
-to run in offline mode.
+`download_model.py` downloads all models required for fully offline execution, including Natasha.
 
 ### LM Studio Embedding Model
 Install and run LM Studio:
@@ -78,7 +77,7 @@ Install and run LM Studio:
 # Default: http://localhost:1234 (or configure custom host/port in LmStudioEmbeddingGeneratorConfig)
 ```
 
-The service connects to `http://192.168.1.16:1234/v1/embeddings` by default (OpenAI-compatible API).
+The service connects to `http://localhost:1234/v1/embeddings` by default (OpenAI-compatible API).
 
 ## Autostart (WSL)
 1) Enable systemd for WSL by adding this to `/etc/wsl.conf`:

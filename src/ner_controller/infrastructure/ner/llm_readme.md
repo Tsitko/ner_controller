@@ -11,6 +11,7 @@
 - GLiNER loads in offline-only mode; tokenizer files are copied from the cached
   base model (`microsoft/mdeberta-v3-base`) into the GLiNER snapshot directory
   to avoid network access.
+- Natasha extractor loads local `navec` and `slovnet` model files from `~/.cache/natasha`.
 
 ## Interfaces
 - This folder contains internal modules used by higher-level layers.

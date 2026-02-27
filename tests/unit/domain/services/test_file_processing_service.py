@@ -19,6 +19,7 @@ from ner_controller.domain.services.file_processing_service import (
     DEFAULT_CHUNK_SIZE,
     DEFAULT_ENTITY_TYPES,
     FileProcessingService,
+    NER_CHUNK_SIZE,
 )
 
 
@@ -286,6 +287,56 @@ class TestFileProcessingServiceProcessFile(unittest.TestCase):
         self.assertEqual(len(result.entities), 1)
         self.assertIn("Alice", result.entities)
 
+    def test_process_file_collects_entities_from_all_chunks(self) -> None:
+        """Final entities contain values from first, middle, and last chunks."""
+        original_text = "Chunk1 Chunk2 Chunk3"
+        encoded_text = base64.b64encode(original_text.encode()).decode()
+
+        chunk1 = FileChunk(id=0, text="Chunk1 text", entities=(), embedding=None)
+        chunk2 = FileChunk(id=1, text="Chunk2 text", entities=(), embedding=None)
+        chunk3 = FileChunk(id=2, text="Chunk3 text", entities=(), embedding=None)
+
+        self.text_chunker.split_text.return_value = [chunk1, chunk2, chunk3]
+        self.entity_extractor.extract.side_effect = [
+            ["EntityFromFirstChunk"],
+            ["EntityFromMiddleChunk"],
+            ["EntityFromLastChunk"],
+        ]
+        self.embedding_generator.generate_embeddings.return_value = [[0.1], [0.2], [0.3]]
+
+        result = self.service.process_file(
+            file_base64=encoded_text,
+            file_id="all-chunks-file",
+            entity_types=["ORG"],
+        )
+
+        self.assertIn("EntityFromFirstChunk", result.entities)
+        self.assertIn("EntityFromMiddleChunk", result.entities)
+        self.assertIn("EntityFromLastChunk", result.entities)
+
+    def test_process_file_uses_main_chunks_for_embeddings(self) -> None:
+        """Embeddings are generated from original main chunks, not NER sub-chunks."""
+        original_text = "A" * (NER_CHUNK_SIZE * 2 + 200)
+        encoded_text = base64.b64encode(original_text.encode()).decode()
+
+        self.text_chunker.split_text.return_value = [
+            FileChunk(id=0, text=original_text, entities=(), embedding=None)
+        ]
+        self.entity_extractor.extract.return_value = ["EntityA"]
+        self.embedding_generator.generate_embeddings.return_value = [[0.1, 0.2, 0.3]]
+
+        result = self.service.process_file(
+            file_base64=encoded_text,
+            file_id="large-main-chunk-file",
+            entity_types=["ORG"],
+            chunk_size=5000,
+            chunk_overlap=100,
+        )
+
+        self.embedding_generator.generate_embeddings.assert_called_once_with([original_text])
+        self.assertEqual(len(result.chunks), 1)
+        self.assertEqual(result.chunks[0].embedding, (0.1, 0.2, 0.3))
+
     def test_process_file_applies_levenshtein_deduplication(self) -> None:
         """Service applies Levenshtein distance-based deduplication."""
         original_text = "мосбилет мосбилета"
@@ -441,6 +492,50 @@ class TestFileProcessingServiceExtractEntitiesFromChunks(unittest.TestCase):
 
         self.assertEqual(len(result[0].entities), 0)
 
+    def test_extract_entities_splits_large_chunk_for_ner(self) -> None:
+        """Splits a large chunk into NER sub-chunks before extraction."""
+        large_text = (
+            "OpenAI released a new model. " * 80
+            + "San Francisco hosts multiple AI companies. " * 80
+            + "Europe and Asia are discussed in this report. " * 80
+        )
+        chunk = FileChunk(id=0, text=large_text, entities=(), embedding=None)
+
+        self.entity_extractor.extract.return_value = ["OpenAI", "San Francisco"]
+
+        result = self.service._extract_entities_from_chunks([chunk], ["ORG"])
+
+        self.assertGreater(self.entity_extractor.extract.call_count, 1)
+        self.assertIn("OpenAI", result[0].entities)
+        self.assertIn("San Francisco", result[0].entities)
+
+    def test_split_text_for_ner_keeps_sentence_boundaries(self) -> None:
+        """NER split packs full sentences and does not cut them in the middle."""
+        text = (
+            "First sentence about OpenAI and research. "
+            "Second sentence mentions San Francisco and Bay Area. "
+            "Third sentence is about Europe and regulation."
+        ) * 20
+
+        sub_chunks = self.service._split_text_for_ner(text)
+
+        self.assertGreater(len(sub_chunks), 1)
+        for sub_chunk in sub_chunks:
+            self.assertLessEqual(len(sub_chunk), NER_CHUNK_SIZE)
+            self.assertFalse(sub_chunk.endswith(" "))
+
+    def test_split_long_sentence_falls_back_to_words(self) -> None:
+        """A very long sentence is split by words without breaking any word."""
+        sentence = ("verylongword " * 400).strip() + "."
+
+        sub_chunks = self.service._split_long_sentence_by_words(sentence)
+
+        self.assertGreater(len(sub_chunks), 1)
+        self.assertTrue(all(chunk for chunk in sub_chunks))
+        for chunk in sub_chunks:
+            self.assertLessEqual(len(chunk), NER_CHUNK_SIZE)
+            self.assertNotIn("  ", chunk)
+
 
 class TestFileProcessingServiceGenerateEmbeddingsForChunks(unittest.TestCase):
     """Tests FileProcessingService._generate_embeddings_for_chunks method."""
@@ -518,6 +613,34 @@ class TestFileProcessingServiceGenerateEmbeddingsForChunks(unittest.TestCase):
 
         self.assertEqual(result[0].embedding, (0.1, 0.2))
         self.assertIsNone(result[1].embedding)
+
+    def test_generate_embeddings_with_generator_exception(self) -> None:
+        """Falls back to None embeddings when generator raises an exception."""
+        chunk1 = FileChunk(id=0, text="Text 1", entities=(), embedding=None)
+        chunk2 = FileChunk(id=1, text="Text 2", entities=(), embedding=None)
+
+        self.embedding_generator.generate_embeddings.side_effect = RuntimeError("LM Studio error")
+
+        result = self.service._generate_embeddings_for_chunks([chunk1, chunk2])
+
+        self.assertEqual(len(result), 2)
+        self.assertIsNone(result[0].embedding)
+        self.assertIsNone(result[1].embedding)
+
+    def test_generate_embeddings_with_response_size_mismatch(self) -> None:
+        """Normalizes embedding list size to match number of chunks."""
+        chunk1 = FileChunk(id=0, text="Text 1", entities=(), embedding=None)
+        chunk2 = FileChunk(id=1, text="Text 2", entities=(), embedding=None)
+        chunk3 = FileChunk(id=2, text="Text 3", entities=(), embedding=None)
+
+        self.embedding_generator.generate_embeddings.return_value = [[0.1, 0.2]]
+
+        result = self.service._generate_embeddings_for_chunks([chunk1, chunk2, chunk3])
+
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0].embedding, (0.1, 0.2))
+        self.assertIsNone(result[1].embedding)
+        self.assertIsNone(result[2].embedding)
 
 
 class TestFileProcessingServiceCollectAllEntities(unittest.TestCase):
